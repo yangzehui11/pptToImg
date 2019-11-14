@@ -1,8 +1,5 @@
 package ykd.ppt;
 
-
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -10,7 +7,6 @@ import java.io.InputStream;
 import com.qiniu.common.QiniuException;
 import com.qiniu.common.Zone;
 import com.qiniu.http.Response;
-import com.qiniu.storage.BucketManager;
 import com.qiniu.storage.Configuration;
 import com.qiniu.storage.UploadManager;
 import com.qiniu.util.Auth;
@@ -70,7 +66,6 @@ public class Qiniu {
         }
         return null;
     }
-
 
     //base64方式上传
     public String put64image(byte[] base64, String key) throws Exception{
