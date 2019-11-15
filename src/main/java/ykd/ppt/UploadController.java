@@ -1,5 +1,7 @@
 package ykd.ppt;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.poi.hslf.model.Slide;
 import org.apache.poi.hslf.model.TextRun;
 import org.apache.poi.hslf.usermodel.RichTextRun;
@@ -39,7 +41,9 @@ public class UploadController {
                 doPPT2003toImage(fileImg,map);
             }else if (houzui.equals("pptx")){
                 doPPT2007toImage(fileImg,map);
-            }else  if(houzui.equals("jpg")||houzui.equals("jpeg")){
+            }else if(houzui.equals("pdf")){
+                PDFToImg(fileImg,map);
+            } else  if(houzui.equals("jpg")||houzui.equals("jpeg")){
                 String s=qiniuCloudUtil.upload(fileImg);
                 ArrayList list=new ArrayList<String>();
                 list.add(s);
@@ -99,8 +103,13 @@ public class UploadController {
                     return false;
                 } finally {
                     //关闭流
-                    os.close();
-                    input.close();
+                    if (os != null) {
+                        os.close();
+                    }
+                    if (input != null) {
+                        input.close();
+                    }
+
                 }
             }
             map.put("arr",list);
@@ -157,8 +166,12 @@ public class UploadController {
                 } catch (IOException e) {
                     return false;
                 } finally {
-                    os.close();
-                    input.close();
+                    if (os != null) {
+                        os.close();
+                    }
+                    if (input != null) {
+                        input.close();
+                    }
                 }
             }
             map.put("arr",list);
@@ -170,6 +183,62 @@ public class UploadController {
         }
         return false;
     }
+
+    /**
+     * PDF转图片 当前是根据页码一页一页转，需要改成一次转完
+     * imgType:转换后的图片类型 jpg,png
+     */
+    //          os,pdf文件流,上传到的map集合
+    public boolean PDFToImg( FileInputStream is, Map<String,Object> map) throws IOException {
+        PDDocument pdDocument = null;
+        /* dpi越大转换后越清晰，相对转换速度越慢 */
+        int dpi = 100;
+        try {
+            ArrayList list=new ArrayList<String>();
+            pdDocument=PDDocument.load(is);
+            PDFRenderer renderer = new PDFRenderer(pdDocument);
+            int pages = pdDocument.getNumberOfPages();
+            BufferedImage image=null;
+            for (int i = 0; i <pages ; i++) {
+                //BufferedImage转InputStream
+                ByteArrayOutputStream os = null;
+                InputStream input = null;
+                try {
+                    image = renderer.renderImageWithDPI(i,dpi);
+                    os = new ByteArrayOutputStream();
+                    ImageIO.write(image, "png", os);
+                    input = new ByteArrayInputStream(os.toByteArray());
+                    String s=qiniuCloudUtil.upload(input);
+                    list.add(s);
+
+                } catch (IOException e) {
+                    return false;
+                } finally {
+                    //关闭流
+                    if (os != null) {
+                        os.close();
+                    }
+                    if (input != null) {
+                        input.close();
+                    }
+                }
+            }
+            map.put("arr",list);
+            map.put("windth",image.getWidth());
+            map.put("height",image.getHeight());
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if (pdDocument != null) {
+                pdDocument.close();
+            }
+        }
+
+    }
+
+
 
 
 }
